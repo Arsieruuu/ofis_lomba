@@ -143,6 +143,7 @@ export default function Wadir3Dashboard({ onLogout }: Wadir3DashboardProps) {
   const [filterJenjang, setFilterJenjang] = useState("Semua");
   const [searchQuery, setSearchQuery] = useState("");
   const [toastMessage, setToastMessage] = useState("");
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -201,7 +202,7 @@ export default function Wadir3Dashboard({ onLogout }: Wadir3DashboardProps) {
 
       {/* SIDEBAR NAVIGATION (NAVSIDE) */}
       <aside
-        className={`fixed lg:static top-0 bottom-0 left-0 z-50 w-72 bg-[#001f54] text-white flex flex-col justify-between transition-transform duration-300 shadow-2xl ${
+        className={`fixed top-0 bottom-0 left-0 z-50 w-72 bg-[#001f54] text-white flex flex-col justify-between transition-transform duration-300 shadow-2xl ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
@@ -379,7 +380,7 @@ export default function Wadir3Dashboard({ onLogout }: Wadir3DashboardProps) {
       </aside>
 
       {/* MAIN CONTENT AREA */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 lg:ml-72">
         {/* TOP HEADER */}
         <header className="sticky top-0 z-30 bg-white border-b border-slate-200 px-4 sm:px-8 py-4 flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-4">
@@ -435,12 +436,67 @@ export default function Wadir3Dashboard({ onLogout }: Wadir3DashboardProps) {
               <span className="hidden md:inline">Profil Wadir III</span>
             </button>
 
-            <button className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 relative">
-              <Bell className="w-5 h-5 text-[#001f54]" />
-              {pendingCount > 0 && (
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 absolute top-2 right-2 border-2 border-white"></span>
+            <div className="relative">
+              <button
+                onClick={() => setNotificationsOpen((isOpen) => !isOpen)}
+                aria-label="Buka notifikasi"
+                aria-expanded={notificationsOpen}
+                className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 relative cursor-pointer"
+              >
+                <Bell className="w-5 h-5 text-[#001f54]" />
+                {pendingCount > 0 && (
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500 absolute top-2 right-2 border-2 border-white"></span>
+                )}
+              </button>
+
+              {notificationsOpen && (
+                <div className="absolute right-0 top-12 z-40 w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+                  <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+                    <div>
+                      <h3 className="text-sm font-extrabold text-[#0a1128]">Notifikasi</h3>
+                      <p className="text-[11px] text-slate-500">Pengajuan yang perlu ditinjau</p>
+                    </div>
+                    <span className="rounded-full bg-amber-50 px-2 py-1 text-[10px] font-extrabold text-amber-700">
+                      {pendingCount} baru
+                    </span>
+                  </div>
+
+                  <div className="max-h-64 overflow-y-auto">
+                    {submissions
+                      .filter((submission) => submission.status === "Menunggu Approval")
+                      .slice(0, 4)
+                      .map((submission) => (
+                        <button
+                          key={submission.id}
+                          onClick={() => {
+                            setSelectedSubmission(submission);
+                            setNotificationsOpen(false);
+                          }}
+                          className="w-full border-b border-slate-100 px-4 py-3 text-left transition-colors hover:bg-slate-50"
+                        >
+                          <div className="flex items-start gap-2">
+                            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+                            <div className="min-w-0">
+                              <p className="truncate text-xs font-bold text-slate-900">{submission.title}</p>
+                              <p className="mt-0.5 text-[10px] font-mono text-slate-500">{submission.id} | {submission.date}</p>
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setActiveTab("dashboard");
+                      setNotificationsOpen(false);
+                    }}
+                    className="w-full bg-slate-50 px-4 py-3 text-center text-xs font-extrabold text-[#0284c7] transition-colors hover:bg-slate-100"
+                  >
+                    Lihat semua pengajuan
+                  </button>
+                </div>
               )}
-            </button>
+            </div>
           </div>
         </header>
 
@@ -583,7 +639,7 @@ export default function Wadir3Dashboard({ onLogout }: Wadir3DashboardProps) {
                 </div>
               </div>
             </div>
-          ) : (
+          ) : activeTab === "dashboard" ? (
             <>
               {/* STATISTIC SUMMARY CARDS */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -827,6 +883,53 @@ export default function Wadir3Dashboard({ onLogout }: Wadir3DashboardProps) {
                 </div>
               </div>
             </>
+          ) : activeTab === "surat" ? (
+            <div className="space-y-6 animate-fade-in">
+              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+                <div>
+                  <p className="text-xs font-mono font-bold uppercase tracking-widest text-[#0284c7]">Workflow Legalitas</p>
+                  <h3 className="text-2xl font-extrabold text-[#0a1128] mt-1">Persetujuan Surat</h3>
+                  <p className="text-sm text-slate-500 mt-1">Tinjau dan sahkan Surat Tugas serta Surat Dispensasi mahasiswa.</p>
+                </div>
+                <span className="w-fit rounded-xl bg-amber-50 border border-amber-200 px-3 py-2 text-xs font-extrabold text-amber-800">{pendingCount} perlu tindakan</span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                <div className="bg-white rounded-2xl border border-amber-200 p-5 shadow-sm"><p className="text-xs font-bold text-slate-500">Menunggu Approval</p><p className="text-3xl font-extrabold text-amber-600 mt-2">{pendingCount}</p><p className="text-[11px] text-slate-500 mt-1">Pengajuan aktif</p></div>
+                <div className="bg-white rounded-2xl border border-emerald-200 p-5 shadow-sm"><p className="text-xs font-bold text-slate-500">Disetujui & Legal</p><p className="text-3xl font-extrabold text-emerald-600 mt-2">{approvedCount}</p><p className="text-[11px] text-slate-500 mt-1">Dokumen tersahkan</p></div>
+                <div className="bg-white rounded-2xl border border-red-200 p-5 shadow-sm"><p className="text-xs font-bold text-slate-500">Perlu Revisi</p><p className="text-3xl font-extrabold text-red-600 mt-2">{submissions.filter((sub) => sub.status === "Revisi").length}</p><p className="text-[11px] text-slate-500 mt-1">Dikembalikan ke jurusan</p></div>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="p-5 border-b border-slate-200"><h4 className="text-base font-extrabold text-[#0a1128]">Antrean Persetujuan Surat</h4><p className="text-xs text-slate-500 mt-1">Klik review untuk melihat detail dan mengambil keputusan.</p></div>
+                <div className="divide-y divide-slate-100">
+                  {submissions.map((sub) => (
+                    <div key={sub.id} className="p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 hover:bg-slate-50">
+                      <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><span className="font-mono text-xs font-bold text-[#0284c7]">{sub.id}</span><span className="rounded bg-blue-50 px-2 py-1 text-[10px] font-bold text-blue-700">{sub.type}</span></div><h5 className="font-extrabold text-sm text-slate-900 mt-2">{sub.title}</h5><p className="text-xs text-slate-500 mt-1">{sub.teamName} | {sub.date}</p></div>
+                      <div className="flex items-center gap-3 shrink-0"><span className={`text-[11px] font-extrabold px-2.5 py-1 rounded-full ${sub.status === "Menunggu Approval" ? "bg-amber-50 text-amber-800" : sub.status === "Disetujui" ? "bg-emerald-50 text-emerald-800" : "bg-red-50 text-red-800"}`}>{sub.status}</span><button onClick={() => setSelectedSubmission(sub)} className="px-3 py-2 rounded-lg bg-[#001f54] hover:bg-[#034078] text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer"><Eye className="w-3.5 h-3.5 text-cyan-300" />Review</button></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : activeTab === "anggaran" ? (
+            <div className="space-y-6 animate-fade-in">
+              <div><p className="text-xs font-mono font-bold uppercase tracking-widest text-[#0284c7]">Kontrol Keuangan</p><h3 className="text-2xl font-extrabold text-[#0a1128] mt-1">Review Anggaran</h3><p className="text-sm text-slate-500 mt-1">Pantau usulan biaya lomba dan status persetujuan anggaran.</p></div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5"><div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm"><p className="text-xs font-bold text-slate-500">Total Anggaran Disetujui</p><p className="text-2xl font-extrabold text-emerald-700 mt-2">Rp 185.000.000</p><p className="text-[11px] text-slate-500 mt-1">Semester Ganjil 2026</p></div><div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm"><p className="text-xs font-bold text-slate-500">Usulan Dalam Review</p><p className="text-2xl font-extrabold text-amber-600 mt-2">Rp 55.500.000</p><p className="text-[11px] text-slate-500 mt-1">{pendingCount} pengajuan pending</p></div><div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm"><p className="text-xs font-bold text-slate-500">Rata-rata per Pengajuan</p><p className="text-2xl font-extrabold text-[#0284c7] mt-2">Rp 11.100.000</p><p className="text-[11px] text-slate-500 mt-1">Dari 5 pengajuan</p></div></div>
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden"><div className="p-5 border-b border-slate-200"><h4 className="text-base font-extrabold text-[#0a1128]">Rincian Usulan Anggaran</h4></div><div className="overflow-x-auto"><table className="w-full text-left text-xs"><thead className="bg-slate-50 text-slate-600"><tr><th className="p-4">Pengajuan</th><th className="p-4">Kegiatan</th><th className="p-4">Pengusul</th><th className="p-4">Nilai Usulan</th><th className="p-4">Status</th><th className="p-4">Aksi</th></tr></thead><tbody className="divide-y divide-slate-100">{submissions.map((sub) => <tr key={sub.id} className="hover:bg-slate-50"><td className="p-4 font-mono font-bold text-[#001f54]">{sub.id}</td><td className="p-4 font-bold text-slate-900 max-w-xs">{sub.title}</td><td className="p-4 text-slate-600">{sub.prodi} ({sub.jenjang})</td><td className="p-4 font-mono font-extrabold text-[#001f54]">{sub.budget}</td><td className="p-4"><span className={`font-bold ${sub.status === "Disetujui" ? "text-emerald-700" : sub.status === "Revisi" ? "text-red-700" : "text-amber-700"}`}>{sub.status}</span></td><td className="p-4"><button onClick={() => setSelectedSubmission(sub)} className="text-[#0284c7] font-extrabold hover:underline cursor-pointer">Review detail</button></td></tr>)}</tbody></table></div></div>
+            </div>
+          ) : activeTab === "monitoring" ? (
+            <div className="space-y-6 animate-fade-in">
+              <div><p className="text-xs font-mono font-bold uppercase tracking-widest text-purple-600">Pusat Monitoring</p><h3 className="text-2xl font-extrabold text-[#0a1128] mt-1">Monitoring Lomba</h3><p className="text-sm text-slate-500 mt-1">Pantau progres kegiatan lomba mahasiswa dari pengajuan hingga pelaporan.</p></div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5"><div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm"><p className="text-xs font-bold text-slate-500">Total Kegiatan 2026</p><p className="text-3xl font-extrabold text-[#001f54] mt-2">24</p><p className="text-[11px] text-emerald-600 font-bold mt-1">+18% dari semester lalu</p></div><div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm"><p className="text-xs font-bold text-slate-500">Sedang Berlangsung</p><p className="text-3xl font-extrabold text-purple-700 mt-2">9</p><p className="text-[11px] text-slate-500 mt-1">Lintas nasional & internasional</p></div><div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm"><p className="text-xs font-bold text-slate-500">Selesai Dilaporkan</p><p className="text-3xl font-extrabold text-emerald-700 mt-2">15</p><p className="text-[11px] text-slate-500 mt-1">Data capaian terverifikasi</p></div></div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5"><div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm"><div className="flex items-center justify-between border-b border-slate-100 pb-3"><h4 className="font-extrabold text-[#0a1128]">Progres Tahapan</h4><PieChart className="w-5 h-5 text-purple-600" /></div>{[{ label: "Pengajuan & Verifikasi", value: 100, color: "bg-emerald-500" }, { label: "Pelaksanaan Lomba", value: 68, color: "bg-purple-500" }, { label: "Pelaporan Hasil", value: 42, color: "bg-amber-500" }].map((item) => <div key={item.label} className="mt-5"><div className="flex justify-between text-xs font-bold text-slate-700"><span>{item.label}</span><span>{item.value}%</span></div><div className="h-2 bg-slate-100 rounded-full mt-2 overflow-hidden"><div className={`h-full rounded-full ${item.color}`} style={{ width: `${item.value}%` }} /></div></div>)}</div><div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm"><h4 className="font-extrabold text-[#0a1128] border-b border-slate-100 pb-3">Kegiatan Terbaru</h4>{submissions.slice(0, 4).map((sub) => <div key={sub.id} className="flex items-center justify-between gap-3 py-4 border-b border-slate-100 last:border-0"><div className="min-w-0"><p className="text-xs font-extrabold text-slate-900 truncate">{sub.title}</p><p className="text-[11px] text-slate-500 mt-1">{sub.date} | {sub.prodi}</p></div><span className={`shrink-0 text-[10px] font-bold px-2 py-1 rounded-full ${sub.status === "Disetujui" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>{sub.status === "Disetujui" ? "Berjalan" : "Persiapan"}</span></div>)}</div></div>
+            </div>
+          ) : (
+            <div className="space-y-6 animate-fade-in">
+              <div><p className="text-xs font-mono font-bold uppercase tracking-widest text-amber-600">Capaian Mahasiswa</p><h3 className="text-2xl font-extrabold text-[#0a1128] mt-1">Rekap Prestasi</h3><p className="text-sm text-slate-500 mt-1">Kompilasi prestasi mahasiswa yang telah diverifikasi oleh institusi.</p></div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5"><div className="bg-white rounded-2xl border border-amber-200 p-5 shadow-sm"><p className="text-xs font-bold text-slate-500">Total Kejuaraan</p><p className="text-3xl font-extrabold text-amber-600 mt-2">112</p><p className="text-[11px] text-slate-500 mt-1">Tahun akademik 2026</p></div><div className="bg-white rounded-2xl border border-blue-200 p-5 shadow-sm"><p className="text-xs font-bold text-slate-500">Nasional</p><p className="text-3xl font-extrabold text-blue-700 mt-2">68</p><p className="text-[11px] text-slate-500 mt-1">Prestasi terverifikasi</p></div><div className="bg-white rounded-2xl border border-purple-200 p-5 shadow-sm"><p className="text-xs font-bold text-slate-500">Internasional</p><p className="text-3xl font-extrabold text-purple-700 mt-2">44</p><p className="text-[11px] text-slate-500 mt-1">Prestasi terverifikasi</p></div></div>
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden"><div className="p-5 border-b border-slate-200 flex items-center justify-between"><div><h4 className="text-base font-extrabold text-[#0a1128]">Prestasi Terbaru</h4><p className="text-xs text-slate-500 mt-1">Daftar capaian yang siap masuk rekap institusi.</p></div><Award className="w-6 h-6 text-amber-500" /></div><div className="overflow-x-auto"><table className="w-full text-left text-xs"><thead className="bg-slate-50 text-slate-600"><tr><th className="p-4">Mahasiswa / Tim</th><th className="p-4">Kompetisi</th><th className="p-4">Tingkat</th><th className="p-4">Capaian</th><th className="p-4">Status</th></tr></thead><tbody className="divide-y divide-slate-100">{[{ team: "Tim Nexus Innovators", event: "Global Scientific Innovation Hackathon 2026", level: "Internasional", result: "Juara 1" }, { team: "Tim Nusantara EcoTech", event: "National Business Plan Championship 2026", level: "Nasional", result: "Juara 2" }, { team: "Tim Algoritmica Cyber", event: "National Big Data Challenge", level: "Nasional", result: "Finalis" }, { team: "Tim Robotics Poltek", event: "Olimpiade Nasional MIPA & Robotic Festival", level: "Nasional", result: "Juara 3" }].map((achievement) => <tr key={achievement.team} className="hover:bg-slate-50"><td className="p-4 font-extrabold text-slate-900">{achievement.team}</td><td className="p-4 text-slate-700 max-w-xs">{achievement.event}</td><td className="p-4"><span className={`px-2 py-1 rounded-full text-[10px] font-bold ${achievement.level === "Internasional" ? "bg-purple-50 text-purple-700" : "bg-blue-50 text-blue-700"}`}>{achievement.level}</span></td><td className="p-4 font-extrabold text-[#001f54]">{achievement.result}</td><td className="p-4"><span className="inline-flex items-center gap-1 text-emerald-700 font-bold"><CheckCircle2 className="w-3.5 h-3.5" />Terverifikasi</span></td></tr>)}</tbody></table></div></div>
+            </div>
           )}
         </main>
       </div>
